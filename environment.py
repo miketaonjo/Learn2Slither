@@ -15,10 +15,13 @@ MOVES = {UP: (-1, 0), LEFT: (0, -1), DOWN: (1, 0), RIGHT: (0, 1)}
 EMPTY, GREEN, RED, DEAD = "empty", "green", "red", "dead"
 
 START_LENGTH = 3
+MIN_SIZE = 5  # smaller boards leave no room for the snake and 3 apples
 
 
 class Board:
     def __init__(self, size=10, seed=None):
+        if not isinstance(size, int) or size < MIN_SIZE:
+            raise ValueError(f"board size must be an integer >= {MIN_SIZE}")
         self.size = size
         self.rng = random.Random(seed)
         self.reset()
@@ -32,8 +35,8 @@ class Board:
         self.greens = []
         self.reds = []
         for _ in range(2):
-            self.greens.append(self._free_cell())
-        self.reds.append(self._free_cell())
+            self._place(self.greens)
+        self._place(self.reds)
         self.steps = 0
         self.max_length = len(self.snake)
 
@@ -52,12 +55,17 @@ class Board:
             if all(self._inside(cell) for cell in snake):
                 return snake
 
-    def _free_cell(self):
-        """Random cell with nothing on it (no snake, no apple)."""
+    def _place(self, apples):
+        """Add an apple on a random free cell (no snake, no other apple).
+
+        If the snake fills the whole board there is no free cell left:
+        we simply skip instead of crashing.
+        """
         taken = set(self.snake) | set(self.greens) | set(self.reds)
         free = [(r, c) for r in range(self.size)
                 for c in range(self.size) if (r, c) not in taken]
-        return self.rng.choice(free)
+        if free:
+            apples.append(self.rng.choice(free))
 
     # ------------------------------------------------------------------
     # Rules
@@ -82,13 +90,13 @@ class Board:
         self.snake.insert(0, head)
         if head in self.greens:
             self.greens.remove(head)
-            self.greens.append(self._free_cell())
+            self._place(self.greens)
             event = GREEN
         elif head in self.reds:
             self.reds.remove(head)
             self.snake.pop()
             self.snake.pop()
-            self.reds.append(self._free_cell())
+            self._place(self.reds)
             event = RED
         else:
             self.snake.pop()

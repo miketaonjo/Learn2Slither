@@ -63,7 +63,7 @@ Coordonnées : toujours `(ligne, colonne)`, ligne 0 en haut.
 - `steps = 0` (durée de la session), `max_length = 3` (longueur max atteinte).
 
 ### `_random_snake()`
-Boucle : tire une **tête** au hasard et une **direction** au hasard, construit les 3 cases `tête - i × direction` (i = 0, 1, 2), c'est-à-dire la tête puis 2 cases derrière elle. Si une case sort du plateau, on recommence. Résultat : serpent **aléatoire** et **contiguë** par construction. (Réponse à un défaut vu dans la grille : « les 3 cases ne sont pas placées aléatoirement ».)
+Boucle : tire une **tête** au hasard et une **direction** au hasard, construit les 3 cases `tête - i × direction` (i = 0, 1, 2), c'est-à-dire la tête puis 2 cases derrière elle. Si une case sort du plateau, on recommence. Résultat : serpent **aléatoire** et **contiguë** par construction.
 
 ### `_place(apples)`
 Calcule les cases occupées (serpent + pommes), liste les cases libres, en choisit une au hasard. S'il n'y a plus de case libre (plateau rempli par le serpent), **on ne fait rien** au lieu de planter.
