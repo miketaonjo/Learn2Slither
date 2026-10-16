@@ -1,42 +1,41 @@
-"""Display: the pygame window. It only DRAWS what the board contains."""
-import os
+import pygame
 
-os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")
-import pygame  # noqa: E402
-
-BACKGROUND = (240, 240, 240)
-GRID = (0, 0, 0)
-GREEN = (0, 255, 0)
-RED = (255, 0, 0)
-SNAKE = (0, 0, 255)
-HEAD = (0, 0, 140)
+BACKGROUND = (0, 0, 0)
+GRID = (100, 100, 100)
+GREEN = (144, 205, 120)
+RED = (232, 105, 105)
+SNAKE = (178, 145, 245)
+HEAD = (150, 105, 235)
 
 
 class Display:
     def __init__(self, size, speed):
+        """Initialize the Pygame window and game display"""
         self.size = size
-        self.speed = speed                 # moves per second
+        self.speed = speed
         self.cell = max(10, min(60, 600 // size))
-        pygame.init()
-        pygame.display.set_caption("Snake Game")
+        pygame.display.init()
+        pygame.display.set_caption("Learn2Slither")
         side = self.cell * size
         self.screen = pygame.display.set_mode((side, side))
         self.clock = pygame.time.Clock()
 
     def _events(self):
+        """Process window events and handle exit requests"""
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                raise KeyboardInterrupt  # same as Ctrl+C
+                raise KeyboardInterrupt
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                raise KeyboardInterrupt  # same as Ctrl+C
+                raise KeyboardInterrupt
 
     def _rect(self, cell):
+        """Return the screen rectangle corresponding to a board cell"""
         row, col = cell
         return pygame.Rect(col * self.cell, row * self.cell,
                            self.cell, self.cell)
 
-    def draw(self, board, caption="Snake Game", wait=True):
-        """Draw the board, then wait to respect the display speed."""
+    def draw(self, board, caption="Learn2Slither", wait=True):
+        """Render the board and optionally limit the frame rate"""
         self._events()
         pygame.display.set_caption(caption)
         self.screen.fill(BACKGROUND)
@@ -56,18 +55,18 @@ class Display:
             self.clock.tick(self.speed)
 
     def wait_key(self):
-        """Step-by-step mode: block until SPACE / ENTER / RIGHT is pressed."""
+        """Wait until the player presses Space or Enter to continue"""
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    raise KeyboardInterrupt  # same as Ctrl+C
+                    raise KeyboardInterrupt
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
-                        raise KeyboardInterrupt  # same as Ctrl+C
-                    if event.key in (pygame.K_SPACE, pygame.K_RETURN,
-                                     pygame.K_RIGHT):
+                        raise KeyboardInterrupt
+                    if event.key in (pygame.K_SPACE, pygame.K_RETURN):
                         return
-            self.clock.tick(30)            # do not burn the CPU while waiting
+            self.clock.tick(30)
 
     def close(self):
+        """Shut down Pygame and release display resources"""
         pygame.quit()

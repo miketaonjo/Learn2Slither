@@ -1,53 +1,46 @@
-"""Interpreter: the ONLY bridge between the board and the agent.
-
-It does two jobs:
-  1. build the STATE: what the snake sees from its head, in the 4
-     directions (nothing else is ever given to the agent);
-  2. turn what happened on the board into a REWARD.
-"""
 from environment import UP, LEFT, DOWN, RIGHT, MOVES, EMPTY, GREEN, RED, DEAD
 
 DIRECTIONS = (UP, LEFT, DOWN, RIGHT)
 
-# ----------------------------------------------------------------------
-# Rewards (the agent will try to maximise their sum)
-# ----------------------------------------------------------------------
+# Number of possible encoded values for each direction
+VALUES_PER_DIRECTION = 12
+
 REWARDS = {
-    GREEN: 30,    # good: the snake grows
-    RED: -15,     # bad: the snake shrinks
-    EMPTY: -1,    # small cost per move: no reason to wander
-    DEAD: -100,   # very bad: wall, own body, or length 0
+    GREEN: 30,
+    RED: -15,
+    EMPTY: -1,
+    DEAD: -100,
 }
 
 
 def reward(event):
+    """Return the reward associated with a game event"""
     return REWARDS[event]
 
 
-# ----------------------------------------------------------------------
-# Vision
-# ----------------------------------------------------------------------
 def look(board):
-    """What the head sees, for each direction.
-
-    Returns {direction: "000GRW"}: the symbols met going away from the
-    head, NEAREST FIRST, up to and including the wall.
-    """
+    """Observe the cells visible along the four directions from snake's head"""
+    cells = board.grid()
+    size = board.size
     seen = {}
     for direction in DIRECTIONS:
         d_row, d_col = MOVES[direction]
         row, col = board.snake[0]
-        ray = ""
-        while not ray.endswith("W"):
-            row, col = row + d_row, col + d_col
-            ray += board.symbol_at((row, col))
-        seen[direction] = ray
+        ray = []
+        while True:
+            row += d_row
+            col += d_col
+            if not (0 <= row < size and 0 <= col < size):
+                ray.append("W")
+                break
+            ray.append(cells.get((row, col), "0"))
+        seen[direction] = "".join(ray)
     return seen
 
 
 def render(seen):
-    """The terminal figure of the subject (a cross centred on the head)."""
-    left = seen[LEFT][::-1]               # farthest first, so W is on the left
+    """Format the directional observations as a terminal diagram"""
+    left = seen[LEFT][::-1]
     pad = " " * len(left)
     lines = [pad + symbol for symbol in seen[UP][::-1]]
     lines.append(left + "H" + seen[RIGHT])
@@ -55,24 +48,12 @@ def render(seen):
     return "\n".join(lines)
 
 
-# ----------------------------------------------------------------------
-# State
-# ----------------------------------------------------------------------
-# For each direction we keep 3 pieces of information:
-#   - how far is the first obstacle (wall or body segment):
-#       0 = right next to the head, 1 = two cells away, 2 = farther
-#   - is there a green apple before that obstacle?  (0/1)
-#   - is there a red apple before that obstacle?    (0/1)
-# That is 3 * 2 * 2 = 12 values per direction -> 12**4 = 20736 states.
-# No absolute distance is used, so the same Q-table works on any board
-# size (this is what makes the "board size" bonus possible).
-VALUES_PER_DIRECTION = 12
-
-
 def _describe(ray):
-    """Turn one ray (nearest first) into a number from 0 to 11."""
-    stops = [i for i, symbol in enumerate(ray) if symbol in "WS"]
-    first_obstacle = stops[0]             # a ray always ends with a wall
+    """Encode the nearest obstacle and visible apples along 1 direct (0-11)"""
+    first_obstacle = ray.find("W")
+    body = ray.find("S")
+    if 0 <= body < first_obstacle:
+        first_obstacle = body
     free = ray[:first_obstacle]
     distance = min(first_obstacle, 2)
     green = "G" in free
@@ -81,7 +62,7 @@ def _describe(ray):
 
 
 def encode(seen):
-    """Pack the 4 rays into ONE integer (the key of the Q-table)."""
+    """Convert directional observations into a single Q-table state index"""
     state = 0
     for direction in DIRECTIONS:
         state = state * VALUES_PER_DIRECTION + _describe(seen[direction])
